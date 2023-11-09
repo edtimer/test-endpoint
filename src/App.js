@@ -14,7 +14,7 @@ import {
   updateUserProfile,
 } from './features/user/userSlice';
 import Todos from './components/Todos';
-import { login,logout, resetAuth } from './app/authSlice'
+import { login, logout, resetAuth } from './app/authSlice'
 function App() {
   const [profile, setProfile] = useState({
     first_name: '',
@@ -63,11 +63,11 @@ function App() {
   const [username, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
-  const [theUser, setTheUser] = useState({first_name:"no user",last_name:"no user"});
+  const [theUser, setTheUser] = useState({ first_name: "no user", last_name: "no user" });
 
   const checkAuth = () => {
     const token = localStorage.getItem('accessToken');
-    if(token){
+    if (token) {
 
       setAuthenticated(true)
     }
@@ -89,67 +89,79 @@ function App() {
   };
   const BASE_URL = "http://localhost:8000/api/users/user-profile/"
   const updateUser = async () => {
-    const updatedUser = JSON.stringify({first_name: newFirstName, last_name: newLastName})
+    const updatedUser = JSON.stringify({ first_name: newFirstName, last_name: newLastName })
     const headers = new Headers();
-    headers.set('Content-Type', 'application/json'); 
+    headers.set('Content-Type', 'application/json');
     headers.set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk5NTg3MDc4LCJpYXQiOjE2OTk0OTcwNzgsImp0aSI6ImJhYTI2NWM1NzFhOTRiOGU4MGFiOTk0OTY0ZmFmZGQ3IiwidXNlcl9pZCI6MX0.wkL8NkVBMID-ofjnymmv9D3kuwXQA3gT_6sKWtxqUmM`);
     //  dispatch(updateUserProfile({first_name:newFirstName,last_name:newLastName}))
-    const response = await fetch(BASE_URL, { method: 'PATCH', headers: headers, body: updatedUser }).then(()=>{
+    const response = await fetch(BASE_URL, { method: 'PATCH', headers: headers, body: updatedUser }).then(() => {
       console.log("submitted")
       getUser()
     }
     );
 
   }
-  const getUser = async() => {
+  const getUser = async () => {
     const user = dispatch(getUserProfile())
     setTheUser(user)
     console.log("the userrrr", user)
   }
+  let socket;
   const openSocket = () => {
-    let socket;
-
-    socket = new W3cwebsocket(`ws://localhost:8001/ws/notification/?uuid=0000`);
-
-    socket.onopen = () => {
-      console.log('WebSocket connection opened.');
-    };
-
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      let notifi = JSON.parse(localStorage.getItem("notification")) || [];
-      const currentDate = moment()
-      const futureDate = currentDate.add(3, 'days').format("YYYY-MM-DDTHH:mm");
-      if (notifi.length > 0) {
-        notifi = notifi.filter(item => (moment().diff(moment(item?.date).format("YYYY-MM-DDTHH:mm:ss"), "seconds")) < 0);
-      }
-      // console.log("Socket data",data);
-
-      if (data?.payload) {
-        data.payload.date = futureDate;
-        notifi.unshift(data.payload);
-        localStorage.setItem("notification", JSON.stringify(notifi));
-        dispatch(setNotifications(notifi));
-        setIsNotComming(true);
-      }
-      socket.send(JSON.stringify({ "type": "delete.notifications", "data": {} })); // Send the message
-    };
+    try {
 
 
-    // Clean up the WebSocket
-    return () => {
-      if (socket) {
-        socket.close();
-      }
-    };
+      socket = new W3cwebsocket(`ws://localhost:8001/ws/notification/?uuid=0000`);
+
+      socket.onopen = () => {
+        console.log('WebSocket connection opened.');
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        let notifi = JSON.parse(localStorage.getItem("notification")) || [];
+        const currentDate = moment()
+        const futureDate = currentDate.add(3, 'days').format("YYYY-MM-DDTHH:mm");
+        if (notifi.length > 0) {
+          notifi = notifi.filter(item => (moment().diff(moment(item?.date).format("YYYY-MM-DDTHH:mm:ss"), "seconds")) < 0);
+        }
+        // console.log("Socket data",data);
+
+        if (data?.payload) {
+          data.payload.date = futureDate;
+          notifi.unshift(data.payload);
+          localStorage.setItem("notification", JSON.stringify(notifi));
+          dispatch(setNotifications(notifi));
+          setIsNotComming(true);
+        }
+        socket.send(JSON.stringify({ "type": "delete.notifications", "data": {} })); // Send the message
+      };
+
+
+      // Clean up the WebSocket
+      // return () => {
+      //   if (socket) {
+      //     socket.close();
+      //   }
+      // };
+    } catch (e) {
+      console.log("socket error", e)
+    }
 
   }
-  const logOut =()=>{
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      dispatch(logout()).then(() => {
-        window.location.href = 'http://localhost:3000';
-      });
+  const logOut = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    dispatch(logout()).then(() => {
+      window.location.href = 'http://localhost:3000';
+    });
+  }
+  const logOutSocket = () => {
+    if (socket) {
+      console.log("closing web socket");
+      socket.close();
+    }
+
   }
 
   // <div>
@@ -205,9 +217,9 @@ function App() {
         </button>
       </div>
       <div className='ml-4 p-8 w-96 space-y-4'>
-        {authenticated === true ? <div className="badge badge-primary">Authenticated</div> :<div className="badge badge-secondary">Not authenticated</div>}
+        {authenticated === true ? <div className="badge badge-primary">Authenticated</div> : <div className="badge badge-secondary">Not authenticated</div>}
         {console.log("the user", profile)}
-         <Card fname={user?.first_name||""} lname={user?.last_name||""} />
+        <Card fname={user?.first_name || ""} lname={user?.last_name || ""} />
         <button
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
           onClick={checkAuth}
@@ -277,6 +289,12 @@ function App() {
           onClick={logOut}
         >
           Log out
+        </button>
+        <button
+          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
+          onClick={logOutSocket}
+        >
+          Socket logout
         </button>
       </div>
     </div>
