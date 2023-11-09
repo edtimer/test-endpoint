@@ -14,7 +14,7 @@ import {
   updateUserProfile,
 } from './features/user/userSlice';
 import Todos from './components/Todos';
-import { login, resetAuth } from './app/authSlice'
+import { login,logout, resetAuth } from './app/authSlice'
 function App() {
   const [profile, setProfile] = useState({
     first_name: '',
@@ -91,11 +91,12 @@ function App() {
   const updateUser = async () => {
     const updatedUser = JSON.stringify({first_name: newFirstName, last_name: newLastName})
     const headers = new Headers();
-    headers.set('Content-Type', 'application/json'); // Set any other headers you need
+    headers.set('Content-Type', 'application/json'); 
     headers.set('authorization', `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjk5NTg3MDc4LCJpYXQiOjE2OTk0OTcwNzgsImp0aSI6ImJhYTI2NWM1NzFhOTRiOGU4MGFiOTk0OTY0ZmFmZGQ3IiwidXNlcl9pZCI6MX0.wkL8NkVBMID-ofjnymmv9D3kuwXQA3gT_6sKWtxqUmM`);
     //  dispatch(updateUserProfile({first_name:newFirstName,last_name:newLastName}))
     const response = await fetch(BASE_URL, { method: 'PATCH', headers: headers, body: updatedUser }).then(()=>{
       console.log("submitted")
+      getUser()
     }
     );
 
@@ -124,7 +125,6 @@ function App() {
       }
       // console.log("Socket data",data);
 
-      // Modify the properties of the payload object directly
       if (data?.payload) {
         data.payload.date = futureDate;
         notifi.unshift(data.payload);
@@ -136,7 +136,7 @@ function App() {
     };
 
 
-    // Clean up the WebSocket connection when the component unmounts
+    // Clean up the WebSocket
     return () => {
       if (socket) {
         socket.close();
@@ -144,12 +144,13 @@ function App() {
     };
 
   }
-  // const logOut =()=>{
-  //     localStorage.removeItem('accessToken');
-  //     dispatch(logout()).then(() => {
-  //       window.location.href = 'http://localhost';
-  //     });
-  // }
+  const logOut =()=>{
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      dispatch(logout()).then(() => {
+        window.location.href = 'http://localhost:3000';
+      });
+  }
 
   // <div>
   //   <div className='flex justify-center mt-20' >
@@ -211,7 +212,7 @@ function App() {
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
           onClick={checkAuth}
         >
-          checkauth
+          check authentication status
         </button>
         <button
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
@@ -261,11 +262,21 @@ function App() {
         >
           update
         </button>
+      </div>
+      <div className="ml-4 bg-white p-8 shadow-md w-96 space-y-4">
+        <h2 className="text-2xl font-semibold">Additional</h2>
         <button
           className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
           onClick={openSocket}
         >
           Open websocket
+        </button>
+
+        <button
+          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-700"
+          onClick={logOut}
+        >
+          Log out
         </button>
       </div>
     </div>
